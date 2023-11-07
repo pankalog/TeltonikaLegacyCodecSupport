@@ -6,7 +6,7 @@ import moment = require('moment');
 
 
 
-const options = {
+const mqttOptions = {
   protocol: 'mqtt',
   host: 'localhost',
   port: 1883,
@@ -16,36 +16,36 @@ const options = {
 //   key: readFileSync('/path/to/client.key'),
 };
 
-const client: MqttClient = connect(options as IClientOptions);
+const client: MqttClient = connect(mqttOptions as IClientOptions);
 
-interface mqttOptions  {
+interface orOptions  {
 	"realm": string,
 	"teltonika_keyword": string,
 	"dataTopic": string,
 	"commandTopic": string
 }
 
-var opts = {
+var orOpts = {
 	realm: "master",
 	teltonika_keyword: "teltonika",
 	dataTopic: "data",
 	commandTopic: "commands"
-} as mqttOptions
+} as orOptions
 
-var conf = {
+var udpServerOptions = {
 	"port": 5002,
 	"api":"",
 }
 
-const dataTopic = (opts: mqttOptions, imei) =>{
-	return (`${opts.realm}/${options.clientId}/${opts.teltonika_keyword}/${imei}/${opts.dataTopic}`)
+const dataTopic = (opts: orOptions, imei) =>{
+	return (`${opts.realm}/${mqttOptions.clientId}/${opts.teltonika_keyword}/${imei}/${opts.dataTopic}`)
 }
-const commandTopic = (opts: mqttOptions, imei) =>{
-	return (`${opts.realm}/${options.clientId}/${opts.teltonika_keyword}/${imei}/${opts.commandTopic}`)
+const commandTopic = (opts: orOptions, imei) =>{
+	return (`${opts.realm}/${mqttOptions.clientId}/${opts.teltonika_keyword}/${imei}/${opts.commandTopic}`)
 }
 
 
-const server = new UdpServerManager(conf);
+const server = new UdpServerManager(udpServerOptions);
 server.on("message", (imei: string, content: ProtocolParser) => {
 	console.log(imei);
 	console.log(content);
@@ -55,7 +55,7 @@ server.on("message", (imei: string, content: ProtocolParser) => {
 
 		avlData.forEach(message => {
 			var mqttMsg = processAvlData(message);
-			client.publish(dataTopic(opts, imei), JSON.stringify(mqttMsg));
+			client.publish(dataTopic(orOpts, imei), JSON.stringify(mqttMsg));
 		});
 	}
 })
