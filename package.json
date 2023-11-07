@@ -1,0 +1,29 @@
+{
+  "name": "teltonikalegacysupport",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/jest": "^29.5.7",
+    "@types/node": "^20.8.10",
+    "@types/react": "^18.2.36",
+    "@types/react-dom": "^18.2.14",
+    "binutils64": "^0.1.2",
+    "complete-teltonika-parser": "^0.3.6",
+    "dgram": "^1.0.1",
+    "i": "^0.3.7",
+    "moment": "^2.29.4",
+    "mqtt": "^5.1.4",
+    "net": "^1.0.2",
+    "npm": "^10.2.3",
+    "path": "^0.12.7",
+    "socket.io": "^4.7.2",
+    "teltonika-parser-ex": "^0.0.16",
+    "typescript": "^5.2.2"
+  }
+}
