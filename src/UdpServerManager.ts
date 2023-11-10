@@ -1,7 +1,7 @@
 import { Socket, createServer } from 'net';
 import { listenForDevice } from './listenForDevice';
 import { randomUUID } from 'crypto';
-import { ProtocolParser } from 'complete-teltonika-parser';
+import { Data, GPRS, ProtocolParser } from 'complete-teltonika-parser';
 import EventEmitter = require('events');
 
 var emitter = new EventEmitter();
@@ -12,7 +12,7 @@ export class UdpServerManager extends EventEmitter {
 		"port": Number;
 		"api": String;
 	};
-	sockets: { [id: string]: { 'imei': string; 'data': ProtocolParser[]; }; };
+	public sockets: { [id: string]: { 'imei': string; 'data': ProtocolParser[]; }; };
 
 	constructor(configuration) {
 		super();
@@ -21,12 +21,11 @@ export class UdpServerManager extends EventEmitter {
 		this.startServer(this.conf.port);
 	}
 
-	sendMqttMessage(imei: string, content: ProtocolParser) {
-		// console.log("decode, emit MQTT message event so that it can be handled");
-		this.emit("message", imei, content);
+	sendMqttMessage(imei: string, uuid:string, content: ProtocolParser) {
+		this.emit("message", imei, uuid, content);
 	}
-	deviceConnected(Imei: string) {
-		this.emit("connected", Imei);
+	deviceConnected(imei: string, uuid: string) {
+		this.emit("connected", imei, uuid);
 	}
 
 	startServer(port: Number) {
@@ -35,13 +34,11 @@ export class UdpServerManager extends EventEmitter {
 		server.on('connection', (sock: Socket) => {
 			
 			var uuid = randomUUID();
-			console.log(`New Teltonika device connected with IMEI ${uuid}`);
-			sock.on("data", (response: Buffer) => {
-				let deviceData = listenForDevice(response);
-				
-
+			console.log(`New Teltonika device connected with UUID ${uuid}`);
+			sock.on("data", (data: Buffer) => {
+				let deviceData = listenForDevice(data);
 				if (deviceData.Content == undefined) {
-					// console.log(deviceData);
+					
 					this.sockets[uuid] = { 'imei': deviceData.Imei, data: [] };
 					var imei_answer = Buffer.alloc(1);
 					//change this to 0 (0x00) if this IMEI should be disallowed.
@@ -49,7 +46,7 @@ export class UdpServerManager extends EventEmitter {
 					sock.write(imei_answer);
 
 					if(deviceData.Imei != undefined){
-						this.deviceConnected(deviceData.Imei);
+						this.deviceConnected(deviceData.Imei, uuid);
 					}
 
 				} else {
@@ -58,11 +55,17 @@ export class UdpServerManager extends EventEmitter {
 					} else {
 						deviceData.Imei = this.sockets[uuid].imei;
 					}
+					if (deviceData.Content.CodecType == "data sending") {
+						deviceData.Content.Content = deviceData.Content.Content as Data
+					} else {
+						deviceData.Content.Content = deviceData.Content.Content as GPRS
+					}
 
 					if (this.sockets[uuid].imei != undefined && deviceData.Content != undefined) {
-						this.sendMqttMessage(this.sockets[uuid].imei, deviceData.Content);
+						this.sendMqttMessage(this.sockets[uuid].imei, uuid, deviceData.Content);
 					}
-					this.sockets[uuid].data.push(deviceData.Content);
+					//TODO: Remove this when done with developing 
+					// this.sockets[uuid].data.push(deviceData.Content);
 
 					const dataReceivedPacket = Buffer.alloc(4);
 					dataReceivedPacket.writeUInt32BE(deviceData.Content.Quantity1);
