@@ -3,20 +3,9 @@ import { UdpServerManager } from './UdpServerManager';
 import {readFileSync} from 'fs';
 import {IClientOptions, IConnackPacket, MqttClient, connect} from 'mqtt';
 import moment = require('moment');
+import env from './../env.json'
 
-
-
-const mqttOptions = {
-  protocol: 'mqtt',
-  host: 'localhost',
-  port: 1883,
-  clientId: "xd"
-//   ca: [readFileSync('/path/to/ca.crt')],
-//   cert: readFileSync('/path/to/client.crt'),
-//   key: readFileSync('/path/to/client.key'),
-};
-
-const client: MqttClient = connect(mqttOptions as IClientOptions);
+let opts = env.localhost;
 
 interface orOptions  {
 	"realm": string,
@@ -25,29 +14,19 @@ interface orOptions  {
 	"commandTopic": string
 }
 
-var orOpts = {
-	realm: "master",
-	teltonika_keyword: "teltonika",
-	dataTopic: "data",
-	commandTopic: "commands"
-} as orOptions
-
-var udpServerOptions = {
-	"port": 5002,
-	"api":"",
+const dataTopic = (opts: orOptions, uuid:string, imei) =>{
+	return (`${opts.realm}/${uuid}/${opts.teltonika_keyword}/${imei}/${opts.dataTopic}`)
+}
+const commandTopic = (opts: orOptions, uuid:string, imei) =>{
+	return (`${opts.realm}/${uuid}/${opts.teltonika_keyword}/${imei}/${opts.commandTopic}`)
 }
 
-const dataTopic = (opts: orOptions, imei) =>{
-	return (`${opts.realm}/${mqttOptions.clientId}/${opts.teltonika_keyword}/${imei}/${opts.dataTopic}`)
-}
-const commandTopic = (opts: orOptions, imei) =>{
-	return (`${opts.realm}/${mqttOptions.clientId}/${opts.teltonika_keyword}/${imei}/${opts.commandTopic}`)
-}
+var clients: {[imei: string]: {client: MqttClient}} = {};
 
 
-const server = new UdpServerManager(udpServerOptions);
-server.on("message", (imei: string, content: ProtocolParser) => {
-	console.log(imei);
+const server = new UdpServerManager(opts.udpServerOptions);
+server.on("message", (imei: string, uuid:string, content: ProtocolParser) => {
+	// console.log(imei);
 	console.log(content);
 	//if it is data
 	if((content.Content as Data).AVL_Datas !== undefined){
@@ -55,16 +34,24 @@ server.on("message", (imei: string, content: ProtocolParser) => {
 
 		avlData.forEach(message => {
 			var mqttMsg = processAvlData(message);
-			client.publish(dataTopic(orOpts, imei), JSON.stringify(mqttMsg));
+			clients[imei].client.publish(dataTopic(opts.orOpts, uuid, imei), JSON.stringify(mqttMsg));
 		});
 	}
 })
-server.on("connected", (imei: string) => {
+server.on("connected", (imei: string, uuid: string) => {
 	console.log(`Device with IMEI ${imei} connected`)
+	const clientOptions = {};
+	for (const key in opts.mqttOptions) {
+		clientOptions[key] = opts.mqttOptions[key];
+	}
+	clientOptions["clientId"] = uuid;
+	const client: MqttClient = connect(clientOptions as IClientOptions);
+	clients[imei] = {"client": client};
 });
 
 server.on("disconnected", (imei: string) => {
 	console.log(`Device with IMEI ${imei} connected`)
+	delete clients[imei]
 });
 
 
@@ -72,27 +59,30 @@ function processAvlData(avlData: AVL_Data){
 
 	var params: {[avlid: number | string]: number | string} = avlData.IOelement.Elements;
 
-	params["latlng"] = `${avlData.GPSelement.Latitude},${avlData.GPSelement.Longitude}`;
-	params["ts"] = moment(avlData.Timestamp).valueOf();
-	params["alt"] =`${avlData.GPSelement.Altitude}`
-	params["ang"] =`${avlData.GPSelement.Angle}`
-	params["sat"] =`${avlData.GPSelement.Satellites}`
-	params["sp"] =`${avlData.GPSelement.Speed}`;
+	var parsedParams: {[avlid: number | string]: number | string} = {};
 
+	parsedParams["latlng"] = `${avlData.GPSelement.Latitude},${avlData.GPSelement.Longitude}`;
+	parsedParams["ts"] = moment(avlData.Timestamp).valueOf();
+	parsedParams["alt"] =`${avlData.GPSelement.Altitude}`
+	parsedParams["ang"] =`${avlData.GPSelement.Angle}`
+	parsedParams["sat"] =`${avlData.GPSelement.Satellites}`
+	parsedParams["sp"] =`${avlData.GPSelement.Speed}`;
+	
+	//ISSUE: The parser parses the axis data incorrectly, resulting in an integer overflow
+	//TODO: Investigate potential fixes
+	for (let key in params) {
+		parsedParams[key] = params[key]
+	}
 
-	// for (let key in avlData.IOelement.Elements) {
-	// 	if (avlData.IOelement.Elements.hasOwnProperty(key)) {
-	// 		let value = avlData.IOelement.Elements[key];
-	// 		// Using type assertion if needed
-	// 		if (typeof value === 'number') {
-	// 			para
-	// 		} else {
-	// 			// Here, TypeScript knows value is a string
-	// 		}
-	// 		console.log(`Key: ${key}, Value: ${value}`);
-	// 	}
-	// }
-	var x = params.toString();
+	return {"state":{"reported":parsedParams}};
 
-	return {"state":{"reported":params}};
+	
 }
+
+function extractValue (x: string)  {
+	var y: number | string = parseInt(x, 16);
+	if (y > Number.MAX_SAFE_INTEGER) {
+	  y = BigInt(`0x${x}`).toString();
+	}
+	return y;
+  }
