@@ -87,7 +87,9 @@ export class UdpServerManager extends EventEmitter {
 				// for some reason it goes back to close, make sure to handle this
 			});
 		});
-		server.listen(5002);
+		server.listen(5002, '0.0.0.0', () => {
+			console.log('Server is listening on all interfaces');
+		});
 		console.log('Listening on port:', port);
 	}
 	deviceDisconnected(imei: string) {
