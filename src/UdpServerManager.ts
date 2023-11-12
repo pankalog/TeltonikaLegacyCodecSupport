@@ -5,16 +5,18 @@ import { Data, GPRS, ProtocolParser } from 'complete-teltonika-parser';
 import EventEmitter = require('events');
 
 var emitter = new EventEmitter();
-
+export interface ISocketOptions {
+	"port": Number;
+	"api": String;
+};
 
 export class UdpServerManager extends EventEmitter {
-	conf: {
-		"port": Number;
-		"api": String;
-	};
+
+	public conf: ISocketOptions;
+	
 	public sockets: { [id: string]: { 'imei': string; 'data': ProtocolParser[]; }; };
 
-	constructor(configuration) {
+	constructor(configuration: ISocketOptions) {
 		super();
 		this.conf = configuration;
 		this.sockets = {};
@@ -37,7 +39,7 @@ export class UdpServerManager extends EventEmitter {
 			console.log(`New Teltonika device connected with UUID ${uuid}`);
 			sock.on("data", (data: Buffer) => {
 				let deviceData = listenForDevice(data);
-				if (deviceData.Content == undefined) {
+				if (deviceData.Content == undefined && deviceData.Imei != undefined) {
 					
 					this.sockets[uuid] = { 'imei': deviceData.Imei, data: [] };
 					var imei_answer = Buffer.alloc(1);
@@ -49,12 +51,14 @@ export class UdpServerManager extends EventEmitter {
 						this.deviceConnected(deviceData.Imei, uuid);
 					}
 
-				} else {
+				} 
+				if (deviceData.Content != undefined && deviceData.Imei == undefined) {
 					if (deviceData.Imei != undefined) {
 						throw new Error("this shouldnt happen");
 					} else {
 						deviceData.Imei = this.sockets[uuid].imei;
 					}
+					
 					if (deviceData.Content.CodecType == "data sending") {
 						deviceData.Content.Content = deviceData.Content.Content as Data
 					} else {
