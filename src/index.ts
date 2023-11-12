@@ -8,7 +8,7 @@ import { UdpServerManager } from "./UdpServerManager";
 import { readFileSync } from "fs";
 import { IClientOptions, IConnackPacket, MqttClient, connect } from "mqtt";
 import moment = require("moment");
-import env from "./../env.json";
+import * as env from './../env.json';
 
 let opts = env.fleet;
 
