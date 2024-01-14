@@ -6,6 +6,42 @@ This is used for integrating legacy devices within OpenRemote, the open-source I
 
 To use, change the variables found within index.ts. If setup properly, OpenRemote will transmit the messages to the OpenRemote MQTT Broker. 
 
+# Description
+
+To allow support of all devices within OpenRemote, a new server has been developed. When the server receives properly-formatted and sequenced data, according to **Teltonika's Codec 8 and 8E** documentation, the server will then connect with a unique MQTT client ID to the specified MQTT broker, sending the contents of the UDP Codec 8 payload formatted in the same way as a [Codec JSON](https://wiki.teltonika-gps.com/view/Codec_JSON), MQTT payload message.
+
+In this way, this server serves as an adapter between older devices with no support for MQTT and/or Codec JSON to the more recent transmission protocol and codec, assuring maximum compatibility of OpenRemote with the entirety of the product-line of Teltonika Telematics.
+
+# Format
+
+The server allows for Teltonika devices to connect using Codec 8 and 8E protocols. Any data that is sent to the server is sent via MQTT to any server and topic the user selects in Teltonika's [Codec JSON](https://wiki.teltonika-gps.com/view/Codec_JSON) format. Different devices use different UUIDs as the client ID. 
+
+# How it works
+
+The index file is the main developer interface for the server. The UDPServerManager is an EventEmitter, and the events emitted are where the MQTT messages are constructed and sent to the MQTT broker. 
+
+Here is a description of what each `UdpServerManager` event is:
+
+* `message`: `imei, uuid, content` :  When a `message` event is emitted, the device with `imei` and `uuid` has sent a data packet, which is of type `ProtocolParser`. Using that class, you can check the metadata of the packet to ensure it contains data the user requires. 
+
+* `connected`: `imei, uuid`: A device with the `imei` has connected, and it has been assigned with `uuid`. Used for creating a connection to the MQTT broker using the `uuid` as a client ID
+
+* `disconnected`: `imei`: The device with `imei` has disconnected. 
+
+# Libraries
+
+* [`complete-teltonika-parser`](https://github.com/TimeLord2010/TeltonikaParser): used to parse Teltonika payloads and conduct all necessary checks and data parsing from the devices.
+
+* [`mqtt`](https://github.com/mqttjs/MQTT.js): MQTT.js used for interfacing to the MQTT broker
+
+* [`moment`](https://github.com/moment/moment): Used for timestamp manipulation, for correct payload formatting 
+
+* [`net`](https://github.com/sleeplessinc/net): Used for creating the UDPServer
+
+* `crypto`: Used for generating UUIDs.
+
+* `events`: Used for extending the EventEmitter
+
 ## Features
 
 1. Compatibility is based solely on npm package `complete-teltonika-parser`, the base of this package
