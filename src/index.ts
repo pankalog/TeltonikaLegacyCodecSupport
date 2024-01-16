@@ -8,9 +8,9 @@ import { UdpServerManager } from "./UdpServerManager";
 import { readFileSync } from "fs";
 import { IClientOptions, IConnackPacket, MqttClient, connect } from "mqtt";
 import moment = require("moment");
-import * as env from './../env.json';
+import dotenv from "dotenv";
 
-let opts = env.fleet;
+let out = dotenv.config({ path: process.cwd()+'/.env' });
 
 interface orOptions {
   realm: string;
@@ -28,33 +28,47 @@ const commandTopic = (opts: orOptions, uuid: string, imei: string) => {
 
 var clients: { [imei: string]: { client: MqttClient } } = {};
 
-const server = new UdpServerManager(opts.udpServerOptions);
-server.on("message", (imei: string, uuid: string, content: ProtocolParser) => {
-  // console.log(imei);
-  console.log(content);
-  //if it is data
-  if ((content.Content as Data).AVL_Datas !== undefined) {
-    let avlData: AVL_Data[] = (content.Content as Data).AVL_Datas;
-
-    avlData.forEach((message) => {
-      var mqttMsg = processAvlData(message);
-      clients[imei].client.publish(
-        dataTopic(opts.orOpts, uuid, imei),
-        JSON.stringify(mqttMsg)
-      );
-    });
+var opts = {
+  orOpts: {
+	realm: process.env.orOpts__realm!,
+	teltonika_keyword: process.env.orOpts__teltonika_keyword!,
+	dataTopic: process.env.orOpts__dataTopic!,
+	commandTopic: process.env.orOpts__commandTopic!,
+  } as orOptions,
+  mqttOptions: {
+	host: process.env.mqttOptions__host!,
+	port: parseInt(process.env.mqttOptions__port!)
+  },
+  udp_options: {
+	port: parseInt(process.env.udpServerOptions__port!)
   }
+};
+
+if (typeof opts.udp_options.port !== 'number') throw new Error("UDP port not defined, check env file");
+
+const server = new UdpServerManager(opts.udp_options);
+server.on("message", (imei: string, uuid: string, content: AVL_Data) => {
+  console.log(content as AVL_Data);
+  
+  var mqttMsg = processAvlData(content);
+  clients[imei].client.publish(
+    dataTopic(opts.orOpts, uuid, imei),
+    JSON.stringify(mqttMsg)
+  );
 });
 server.on("connected", (imei: string, uuid: string) => {
-  console.log(`Device with IMEI ${imei} connected`);
+  console.log(`CONNECT: Device with IMEI ${imei} connected`);
   const clientOptions: IClientOptions = opts.mqttOptions as IClientOptions;
   clientOptions["clientId"] = uuid;
   const client: MqttClient = connect(clientOptions as IClientOptions);
+  client.subscribe(commandTopic(opts.orOpts, uuid, imei));
+  client.subscribe(dataTopic(opts.orOpts, uuid, imei));
   clients[imei] = { client: client };
 });
 
 server.on("disconnected", (imei: string) => {
-  console.log(`Device with IMEI ${imei} connected`);
+  console.log(`DISCONNECT: Device with IMEI ${imei} disconnected`);
+  clients[imei].client.end();
   delete clients[imei];
 });
 
@@ -64,14 +78,13 @@ function processAvlData(avlData: AVL_Data) {
 
   var parsedParams: { [avlid: number | string]: number | string } = {};
 
-  parsedParams[
-    "latlng"
-  ] = `${avlData.GPSelement.Latitude},${avlData.GPSelement.Longitude}`;
+  parsedParams["latlng"] = `${avlData.GPSelement.Latitude},${avlData.GPSelement.Longitude}`;
   parsedParams["ts"] = moment(avlData.Timestamp).valueOf();
   parsedParams["alt"] = `${avlData.GPSelement.Altitude}`;
   parsedParams["ang"] = `${avlData.GPSelement.Angle}`;
   parsedParams["sat"] = `${avlData.GPSelement.Satellites}`;
   parsedParams["sp"] = `${avlData.GPSelement.Speed}`;
+  parsedParams["evt"] = `${avlData.IOelement.EventID != undefined ? avlData.IOelement.EventID : 0}`;
 
   //ISSUE: The parser parses the axis data incorrectly, resulting in an integer overflow
   //TODO: Investigate potential fixes
