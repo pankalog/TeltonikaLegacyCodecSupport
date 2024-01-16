@@ -1,13 +1,13 @@
 import { Socket, createServer } from 'net';
 import { listenForDevice } from './listenForDevice';
 import { randomUUID } from 'crypto';
-import { Data, GPRS, ProtocolParser } from 'complete-teltonika-parser';
+import { AVL_Data, Data, GPRS, ProtocolParser } from 'complete-teltonika-parser';
 import EventEmitter = require('events');
+
 
 var emitter = new EventEmitter();
 export interface ISocketOptions {
 	"port": Number;
-	"api": String;
 };
 
 export class UdpServerManager extends EventEmitter {
@@ -23,7 +23,7 @@ export class UdpServerManager extends EventEmitter {
 		this.startServer(this.conf.port);
 	}
 
-	sendMqttMessage(imei: string, uuid:string, content: ProtocolParser) {
+	sendMqttMessage(imei: string, uuid:string, content: AVL_Data) {
 		this.emit("message", imei, uuid, content);
 	}
 	deviceConnected(imei: string, uuid: string) {
@@ -58,7 +58,8 @@ export class UdpServerManager extends EventEmitter {
 					} else {
 						deviceData.Imei = this.sockets[uuid].imei;
 					}
-					
+					// Implement codec-checking here
+
 					if (deviceData.Content.CodecType == "data sending") {
 						deviceData.Content.Content = deviceData.Content.Content as Data
 					} else {
@@ -66,7 +67,19 @@ export class UdpServerManager extends EventEmitter {
 					}
 
 					if (this.sockets[uuid].imei != undefined && deviceData.Content != undefined) {
-						this.sendMqttMessage(this.sockets[uuid].imei, uuid, deviceData.Content);
+
+						if ('AVL_Datas' in deviceData.Content.Content) {
+							// set the type of element to AVL_Data
+
+							deviceData.Content.Content.AVL_Datas.sort((a: AVL_Data, b: AVL_Data) => {return a.Timestamp.getTime() - b.Timestamp.getTime()}).forEach((element: AVL_Data) => {
+								this.sendMqttMessage(this.sockets[uuid].imei, uuid, element);
+							});
+						}
+						else{
+							// This means that this data is a response to a GPRS command (SMS). This is where you would implement 
+							// the logic for handling the response to the command.
+						// this.sendMqttMessage(this.sockets[uuid].imei, uuid, deviceData.Content.Content);
+						}
 					}
 					//TODO: Remove this when done with developing 
 					// this.sockets[uuid].data.push(deviceData.Content);
@@ -91,7 +104,7 @@ export class UdpServerManager extends EventEmitter {
 				// for some reason it goes back to close, make sure to handle this
 			});
 		});
-		server.listen(5002, '0.0.0.0', () => {
+		server.listen(Number(port), '0.0.0.0', () => {
 			console.log('Server is listening on all interfaces');
 		});
 		console.log('Listening on port:', port);
@@ -99,7 +112,6 @@ export class UdpServerManager extends EventEmitter {
 	deviceDisconnected(imei: string) {
 		this.emit("disconnected", imei);
 	}
-	
 }
 
 export {emitter};
