@@ -17,7 +17,7 @@
     "binutils64": "^0.1.2",
     "complete-teltonika-parser": "^0.3.6",
     "dgram": "^1.0.1",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.4.0",
     "i": "^0.3.7",
     "moment": "^2.29.4",
     "mqtt": "^5.1.4",

@@ -8,8 +8,8 @@ import { UdpServerManager } from "./UdpServerManager";
 import { readFileSync } from "fs";
 import { IClientOptions, IConnackPacket, MqttClient, connect } from "mqtt";
 import moment = require("moment");
-import dotenv from "dotenv";
-
+// import dotenv
+import * as dotenv from 'dotenv';
 let out = dotenv.config({ path: process.cwd()+'/.env' });
 
 interface orOptions {
