@@ -39,18 +39,21 @@ export class UdpServerManager extends EventEmitter {
 			console.log(`New Teltonika device connected with UUID ${uuid}`);
 			sock.on("data", (data: Buffer) => {
 				let deviceData = listenForDevice(data);
+				console.log(deviceData);
 				if (deviceData.Content == undefined && deviceData.Imei != undefined) {
 					
 					this.sockets[uuid] = { 'imei': deviceData.Imei, data: [] };
-					var imei_answer = Buffer.alloc(1);
 					//change this to 0 (0x00) if this IMEI should be disallowed.
-					imei_answer.writeUint8(1);
+					var imei_answer : Uint8Array;
+					imei_answer = new Uint8Array(1);
+					imei_answer[0]= 1;
+					console.log(imei_answer);
 					sock.write(imei_answer);
+					console.log("answered on socket")
 
 					if(deviceData.Imei != undefined){
 						this.deviceConnected(deviceData.Imei, uuid);
 					}
-
 				} 
 				if (deviceData.Content != undefined && deviceData.Imei == undefined) {
 					if (deviceData.Imei != undefined) {
@@ -105,9 +108,8 @@ export class UdpServerManager extends EventEmitter {
 			});
 		});
 		server.listen(Number(port), '0.0.0.0', () => {
-			console.log('Server is listening on all interfaces');
+			console.log('Listening on all interfaces on port:', port);
 		});
-		console.log('Listening on port:', port);
 	}
 	deviceDisconnected(imei: string) {
 		this.emit("disconnected", imei);

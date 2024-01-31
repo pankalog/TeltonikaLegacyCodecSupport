@@ -1,8 +1,15 @@
 version: '3'
 services:
   server:
-    build: .
+    build:
+      context: .
     environment:
-      - NODE_ENV=production
-    env_file:
-      - .env
+      - NODE_ENV=${NODE_ENV:-production}
+      - mqttOptions__host=${mqttOptions__host:-localhost}
+      - mqttOptions__port=${mqttOptions__port:-1883}
+      - mqttOptions__protocol=${mqttOptions__protocol:-mqtt}
+      - orOpts__commandTopic=${orOpts__commandTopic:-commands}
+      - orOpts__dataTopic=${orOpts__dataTopic:-data}
+      - orOpts__realm=${orOpts__realm:-master}
+      - orOpts__teltonika_keyword=${orOpts__teltonika_keyword:-teltonika}
+      - udpServerOptions__port=${udpServerOptions__port:-8833}

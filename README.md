@@ -6,6 +6,23 @@ This is used for integrating legacy devices within OpenRemote, the open-source I
 
 To use, change the variables found within index.ts. If setup properly, OpenRemote will transmit the messages to the OpenRemote MQTT Broker. 
 
+# Quickstart
+Download the ``docker-compose.yml`` file:
+```bash
+wget https://github.com/pankalog/TeltonikaLegacyCodecSupport/blob/main/docker-compose.yml
+```
+
+And run the server:
+```bash
+docker-compose -p teltonika-server up -d
+```
+## Customization, environment variables
+To set your own environment variables, download the example `.env` file:
+```bash
+wget https://github.com/pankalog/TeltonikaLegacyCodecSupport/blob/main/.env
+```
+And edit the file to match your specific server settings.
+
 # Description
 
 To allow support of all devices within OpenRemote, a new server has been developed. When the server receives properly-formatted and sequenced data, according to **Teltonika's Codec 8 and 8E** documentation, the server will then connect with a unique MQTT client ID to the specified MQTT broker, sending the contents of the UDP Codec 8 payload formatted in the same way as a [Codec JSON](https://wiki.teltonika-gps.com/view/Codec_JSON), MQTT payload message.
