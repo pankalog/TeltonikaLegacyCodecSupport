@@ -48,8 +48,7 @@ if (typeof opts.udp_options.port !== 'number') throw new Error("UDP port not def
 
 const server = new UdpServerManager(opts.udp_options);
 server.on("message", (imei: string, uuid: string, content: AVL_Data) => {
-  console.log(content as AVL_Data);
-  
+  console.log(`${imei}\t${content.Timestamp.toDateString()}\t${content.IOelement.ElementCount}`);
   var mqttMsg = processAvlData(content);
   clients[imei].client.publish(
     dataTopic(opts.orOpts, uuid, imei),

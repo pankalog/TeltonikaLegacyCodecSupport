@@ -1,8 +1,9 @@
 version: '3'
 services:
   server:
-    build:
-      context: .
+    image: pankalog/teltonika-codec-to-mqtt:latest
+    ports:
+      - "${udpServerOptions__port:-8833}:${udpServerOptions__port:-8833}"
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - mqttOptions__host=${mqttOptions__host:-localhost}
