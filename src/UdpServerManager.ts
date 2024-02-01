@@ -39,7 +39,6 @@ export class UdpServerManager extends EventEmitter {
 			console.log(`New Teltonika device connected with UUID ${uuid}`);
 			sock.on("data", (data: Buffer) => {
 				let deviceData = listenForDevice(data);
-				console.log(deviceData);
 				if (deviceData.Content == undefined && deviceData.Imei != undefined) {
 					
 					this.sockets[uuid] = { 'imei': deviceData.Imei, data: [] };
@@ -47,7 +46,6 @@ export class UdpServerManager extends EventEmitter {
 					var imei_answer : Uint8Array;
 					imei_answer = new Uint8Array(1);
 					imei_answer[0]= 1;
-					console.log(imei_answer);
 					sock.write(imei_answer);
 					console.log("answered on socket")
 
