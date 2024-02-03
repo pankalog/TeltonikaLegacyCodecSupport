@@ -18,9 +18,6 @@ jobs:
         with:
           node-version: '14'
 
-      - name: Install Dependencies
-        run: npm install
-
       - name: Get diff lines
         id: diff
         uses: Equip-Collaboration/diff-line-numbers@v1.0.0
@@ -47,6 +44,7 @@ jobs:
           check-fail-mode: errors_in_code
           output-behaviour: both
           comment-behaviour: new
+          debug: true
           files-changed: ${{steps.files.outputs.files_updated}}
           files-added: ${{steps.files.outputs.files_created}}
           files-deleted: ${{steps.files.outputs.files_deleted}}
