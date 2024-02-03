@@ -9,7 +9,7 @@ import { readFileSync } from "fs";
 import { IClientOptions, IConnackPacket, MqttClient, connect } from "mqtt";
 import moment = require("moment");
 // import dotenv
-import * as dotenv from 'dotenv';
+import * as dotenvv from 'dotenv';
 let out = dotenv.config({ path: process.cwd()+'/.env' });
 
 interface orOptions {
