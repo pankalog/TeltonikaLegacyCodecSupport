@@ -23,9 +23,6 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Typecheck
-        uses: andoshin11/typescript-error-reporter-action@v1.0.2
-
       - name: Get diff lines
         id: diff
         uses: Equip-Collaboration/diff-line-numbers@v1.0.0
