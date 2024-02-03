@@ -16,7 +16,11 @@ jobs:
     - name: Dump GitHub Actions context
       shell: bash
       run: echo "$GITHUB_CONTEXT"
-    
+
+    - name: Extract commit SHA
+      id: sha
+      run: echo "SHORT_SHA=$(git rev-parse --short=7 ${{ github.sha }})" >> $GITHUB_ENV
+      
     - name: Check out the code
       uses: actions/checkout@v2
 
@@ -27,7 +31,8 @@ jobs:
       uses: docker/login-action@v1
       with:
         username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_ACCESSTOKEN }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
 
     - name: Build and push
       uses: docker/build-push-action@v2
@@ -35,5 +40,5 @@ jobs:
         context: .
         file: ./Dockerfile
         push: false
-        tags: ${{ secrets.DOCKER_USERNAME }}/repoTest:"{$GITHUB_SHA::7}"
+        tags: ${{ secrets.DOCKER_USERNAME }}/repoTest:${{ env.SHORT_SHA }}
 
