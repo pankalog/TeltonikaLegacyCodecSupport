@@ -13,7 +13,7 @@ import * as dotenvv from 'dotenv';
 let out = dotenv.config({ path: process.cwd()+'/.env' });
 
 interface orOptions {
-  realm: string;
+  realm: strings;
   teltonika_keyword: string;
   dataTopic: string;
   commandTopic: string;
