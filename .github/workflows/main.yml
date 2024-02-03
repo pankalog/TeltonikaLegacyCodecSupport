@@ -1,19 +1,14 @@
-name: Docker Image CI
+name: Docker Image CI - Release
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
 
-  build:
-
+  CreateRelease:
     runs-on: ubuntu-latest
 
     steps:
-
 
     - name: Check out the code
       uses: actions/checkout@v2
@@ -42,5 +37,21 @@ jobs:
         file: ./Dockerfile
         push: true
         platforms: linux/amd64,linux/arm64
-        tags: ${{ secrets.DOCKER_USERNAME }}/repotest:${{ env.SHORT_SHA }}
+        tags:   ${{ secrets.DOCKER_USERNAME }}/repotest:${{ env.SHORT_SHA }} ,
+                ${{ secrets.DOCKER_USERNAME }}/repotest:latest
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.SHORT_SHA }}
+        release_name: Release ${{ env.SHORT_SHA }}
+        draft: false
+        prerelease: false
+        body: |
+          Docker images built and pushed to DockerHub:
+          - `${{ secrets.DOCKER_USERNAME }}/repotest:${{ env.SHORT_SHA }}`
+          - `${{ secrets.DOCKER_USERNAME }}/repotest:latest`
 
