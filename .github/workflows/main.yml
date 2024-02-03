@@ -41,5 +41,5 @@ jobs:
         context: .
         file: ./Dockerfile
         push: false
-        tags: ${{ secrets.DOCKER_USERNAME }}/repoTest:${{ env.SHORT_SHA }}
+        tags: ${{ secrets.DOCKER_USERNAME }}/repotest:${{ env.SHORT_SHA }}
 
