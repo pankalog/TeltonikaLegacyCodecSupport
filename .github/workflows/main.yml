@@ -54,6 +54,6 @@ jobs:
         prerelease: false
         body: |
           Docker images built and pushed to DockerHub:
-          - `${{ secrets.DOCKER_USERNAME }}/repotest:${{ env.SHORT_SHA }}`
-          - `${{ secrets.DOCKER_USERNAME }}/repotest:latest`
+          - `${{ secrets.DOCKER_USERNAME }}/teltonika-codec-to-mqtt:${{ env.SHORT_SHA }}`
+          - `${{ secrets.DOCKER_USERNAME }}/teltonika-codec-to-mqtt:latest`
 
