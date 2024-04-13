@@ -37,7 +37,8 @@ var opts = {
   } as orOptions,
   mqttOptions: {
 	host: process.env.mqttOptions__host!,
-	port: parseInt(process.env.mqttOptions__port!)
+	port: parseInt(process.env.mqttOptions__port!),
+    protocol: process.env.mqttOptions__protocol!
   },
   udp_options: {
 	port: parseInt(process.env.udpServerOptions__port!)
@@ -50,6 +51,10 @@ const server = new UdpServerManager(opts.udp_options);
 server.on("message", (imei: string, uuid: string, content: AVL_Data) => {
   console.log(`${imei}\t${content.Timestamp.toDateString()}\t${content.IOelement.ElementCount}`);
   var mqttMsg = processAvlData(content);
+  if(!clients[imei].client.connected) {
+    console.log(`Error connecting to MQTT broker. Message: ${process.env.mqttOptions__host!}:${process.env.mqttOptions__port!}\t\t${JSON.stringify(mqttMsg)}`)
+    return
+  }
   clients[imei].client.publish(
     dataTopic(opts.orOpts, uuid, imei),
     JSON.stringify(mqttMsg)
