@@ -39,8 +39,8 @@ jobs:
         file: ./Dockerfile
         push: true
         platforms: linux/amd64,linux/arm64
-        tags:   ${{ secrets.DOCKER_USERNAME }}/repotest:${{ env.SHORT_SHA }} ,
-                ${{ secrets.DOCKER_USERNAME }}/repotest:latest
+        tags:   ${{ secrets.DOCKER_USERNAME }}/teltonika-codec-to-mqtt:${{ env.SHORT_SHA }} ,
+                ${{ secrets.DOCKER_USERNAME }}/teltonika-codec-to-mqtt:latest
 
     - name: Create Release
       id: create_release
